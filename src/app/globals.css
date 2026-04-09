@@ -163,20 +163,39 @@ html, body {
   transform: rotate(-1.5deg);
 }
 
-.memory-photo-placeholder {
+.memory-photo-img {
   width: clamp(140px, 35vw, 220px);
   aspect-ratio: 4 / 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  object-fit: cover;
   border-radius: 1px;
+  display: block;
 }
 
-.memory-photo-label {
-  font-family: var(--font-pixel), monospace;
-  font-size: clamp(0.45rem, 1.5vw, 0.6rem);
-  color: rgba(255, 255, 255, 0.7);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+.memory-photo-split {
+  display: flex;
+  gap: 4px;
+}
+
+.memory-photo-img-half {
+  width: clamp(68px, 17vw, 108px);
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 1px;
+  display: block;
+}
+
+.memory-photo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+}
+
+.memory-photo-img-quarter {
+  width: clamp(68px, 17vw, 108px);
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 1px;
+  display: block;
 }
 
 .memory-title {

@@ -8,19 +8,16 @@ interface MemoryScreenProps {
   onContinue: () => void;
 }
 
-const placeholderColors = [
-  "#e8836b", "#7eb8c9", "#c5a3d9", "#a0c880", "#f0c060", "#f08080",
-];
-
 export default function MemoryScreen({ memoryIndex, onContinue }: MemoryScreenProps) {
   const data = memoryData[memoryIndex];
   if (!data) return null;
 
-  const bgColor = placeholderColors[memoryIndex % placeholderColors.length];
+  const photoCount = data.photos.length;
+  const isGrid = photoCount === 4;
+  const isSplit = photoCount === 2;
 
   return (
     <div className="memory-overlay" onClick={onContinue}>
-      {/* Photo at top */}
       <motion.div
         className="memory-photo-area"
         initial={{ opacity: 0, y: -30 }}
@@ -28,12 +25,38 @@ export default function MemoryScreen({ memoryIndex, onContinue }: MemoryScreenPr
         transition={{ duration: 0.5, ease: "easeOut" }}
       >
         <div className="memory-photo-frame">
-          <div
-            className="memory-photo-placeholder"
-            style={{ backgroundColor: bgColor }}
-          >
-            <span className="memory-photo-label">{data.photoPlaceholder}</span>
-          </div>
+          {photoCount === 1 && (
+            <img
+              src={data.photos[0]}
+              alt={data.title}
+              className="memory-photo-img"
+              style={data.grayscale ? { filter: "grayscale(1)" } : undefined}
+            />
+          )}
+          {isSplit && (
+            <div className="memory-photo-split">
+              {data.photos.map((src, i) => (
+                <img
+                  key={i}
+                  src={src}
+                  alt={`${data.title} ${i + 1}`}
+                  className="memory-photo-img-half"
+                />
+              ))}
+            </div>
+          )}
+          {isGrid && (
+            <div className="memory-photo-grid">
+              {data.photos.map((src, i) => (
+                <img
+                  key={i}
+                  src={src}
+                  alt={`${data.title} ${i + 1}`}
+                  className="memory-photo-img-quarter"
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         <motion.h2
@@ -55,7 +78,6 @@ export default function MemoryScreen({ memoryIndex, onContinue }: MemoryScreenPr
         </motion.p>
       </motion.div>
 
-      {/* Continue prompt at bottom */}
       <motion.p
         className="memory-continue"
         initial={{ opacity: 0 }}

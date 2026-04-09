@@ -13,8 +13,9 @@ const MEET_LINES = [
 ];
 const MEET_HINT = "нажми...";
 
-// ===== CRISP PIXEL TEXT (no anti-aliasing blur) =====
-const textCache = new Map<string, HTMLCanvasElement>();
+// ===== CRISP PIXEL TEXT — render at 4x then downscale =====
+const SCALE = 4;
+const textCache = new Map<string, { canvas: HTMLCanvasElement; w: number; h: number }>();
 
 function drawPixelText(
   ctx: CanvasRenderingContext2D, text: string,
@@ -22,44 +23,53 @@ function drawPixelText(
   align: "left" | "center" = "center",
   shadow = true,
 ) {
-  const key = `${text}_${fontSize}_${color}`;
-  let off = textCache.get(key);
+  const key = `${text}_${fontSize}_${color}_${shadow}`;
+  let cached = textCache.get(key);
 
-  if (!off) {
-    off = document.createElement("canvas");
+  if (!cached) {
+    const bigSize = fontSize * SCALE;
+    const off = document.createElement("canvas");
     const oc = off.getContext("2d")!;
-    oc.font = `${fontSize}px "Press Start 2P", monospace`;
+    oc.font = `${bigSize}px "Press Start 2P", monospace`;
     const m = oc.measureText(text);
-    const w = Math.ceil(m.width) + 4;
-    const h = Math.ceil(fontSize * 1.6) + 4;
+    const w = Math.ceil(m.width) + SCALE * 4;
+    const h = Math.ceil(bigSize * 1.5) + SCALE * 4;
     off.width = w;
     off.height = h;
 
-    oc.font = `${fontSize}px "Press Start 2P", monospace`;
+    oc.font = `${bigSize}px "Press Start 2P", monospace`;
     oc.textBaseline = "top";
+    oc.imageSmoothingEnabled = false;
 
     // Shadow
     if (shadow) {
-      oc.fillStyle = "rgba(0,0,0,0.9)";
-      oc.fillText(text, 2, 2);
+      oc.fillStyle = "#000000";
+      oc.fillText(text, SCALE + SCALE, SCALE + SCALE);
     }
 
     // Main text
     oc.fillStyle = color;
-    oc.fillText(text, 1, 1);
+    oc.fillText(text, SCALE, SCALE);
 
-    // Threshold alpha to remove anti-aliasing
+    // Hard threshold — kill all anti-aliasing
     const id = oc.getImageData(0, 0, w, h);
     for (let i = 3; i < id.data.length; i += 4) {
-      id.data[i] = id.data[i] > 80 ? 255 : 0;
+      id.data[i] = id.data[i] > 100 ? 255 : 0;
     }
     oc.putImageData(id, 0, 0);
 
-    textCache.set(key, off);
+    const finalW = Math.ceil(w / SCALE);
+    const finalH = Math.ceil(h / SCALE);
+    cached = { canvas: off, w: finalW, h: finalH };
+    textCache.set(key, cached);
   }
 
-  const dx = align === "center" ? Math.floor(x - off.width / 2) : Math.floor(x);
-  ctx.drawImage(off, dx, Math.floor(y));
+  const dx = align === "center" ? Math.floor(x - cached.w / 2) : Math.floor(x);
+  const prev = ctx.imageSmoothingEnabled;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(cached.canvas, 0, 0, cached.canvas.width, cached.canvas.height,
+    dx, Math.floor(y), cached.w, cached.h);
+  ctx.imageSmoothingEnabled = prev;
 }
 
 // ===== MAIN RENDER =====
