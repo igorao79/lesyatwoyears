@@ -13,63 +13,24 @@ const MEET_LINES = [
 ];
 const MEET_HINT = "нажми...";
 
-// ===== CRISP PIXEL TEXT — render at 4x then downscale =====
-const SCALE = 4;
-const textCache = new Map<string, { canvas: HTMLCanvasElement; w: number; h: number }>();
-
+// ===== SIMPLE CANVAS TEXT =====
 function drawPixelText(
   ctx: CanvasRenderingContext2D, text: string,
   x: number, y: number, fontSize: number, color: string,
   align: "left" | "center" = "center",
   shadow = true,
 ) {
-  const key = `${text}_${fontSize}_${color}_${shadow}`;
-  let cached = textCache.get(key);
+  ctx.font = `${fontSize}px "Press Start 2P", monospace`;
+  ctx.textBaseline = "top";
+  ctx.textAlign = align === "center" ? "center" : "left";
 
-  if (!cached) {
-    const bigSize = fontSize * SCALE;
-    const off = document.createElement("canvas");
-    const oc = off.getContext("2d")!;
-    oc.font = `${bigSize}px "Press Start 2P", monospace`;
-    const m = oc.measureText(text);
-    const w = Math.ceil(m.width) + SCALE * 4;
-    const h = Math.ceil(bigSize * 1.5) + SCALE * 4;
-    off.width = w;
-    off.height = h;
-
-    oc.font = `${bigSize}px "Press Start 2P", monospace`;
-    oc.textBaseline = "top";
-    oc.imageSmoothingEnabled = false;
-
-    // Shadow
-    if (shadow) {
-      oc.fillStyle = "#000000";
-      oc.fillText(text, SCALE + SCALE, SCALE + SCALE);
-    }
-
-    // Main text
-    oc.fillStyle = color;
-    oc.fillText(text, SCALE, SCALE);
-
-    // Hard threshold — kill all anti-aliasing
-    const id = oc.getImageData(0, 0, w, h);
-    for (let i = 3; i < id.data.length; i += 4) {
-      id.data[i] = id.data[i] > 100 ? 255 : 0;
-    }
-    oc.putImageData(id, 0, 0);
-
-    const finalW = Math.ceil(w / SCALE);
-    const finalH = Math.ceil(h / SCALE);
-    cached = { canvas: off, w: finalW, h: finalH };
-    textCache.set(key, cached);
+  if (shadow) {
+    ctx.fillStyle = "#000000";
+    ctx.fillText(text, x + 1, y + 1);
   }
 
-  const dx = align === "center" ? Math.floor(x - cached.w / 2) : Math.floor(x);
-  const prev = ctx.imageSmoothingEnabled;
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(cached.canvas, 0, 0, cached.canvas.width, cached.canvas.height,
-    dx, Math.floor(y), cached.w, cached.h);
-  ctx.imageSmoothingEnabled = prev;
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
 }
 
 // ===== MAIN RENDER =====
@@ -163,18 +124,18 @@ function drawGameWorld(ctx: CanvasRenderingContext2D, state: GameState) {
     if (state.meetTextIndex >= 0 && state.meetTextIndex < MEET_LINES.length) {
       const line = MEET_LINES[state.meetTextIndex];
       const isLast = state.meetTextIndex === MEET_LINES.length - 1;
-      const fontSize = isLast ? 7 : 6;
+      const fontSize = isLast ? 9 : 8;
       const color = isLast ? "#ff6688" : "#ffffff";
 
       // Fade in: use meetTextTimer
       const alpha = Math.min(1, state.meetTextTimer / 30);
       ctx.globalAlpha = alpha;
-      drawPixelText(ctx, line, INTERNAL_W / 2, 18, fontSize, color, "center");
+      drawPixelText(ctx, line, INTERNAL_W / 2, 14, fontSize, color, "center");
 
       // Hint text
       if (!isLast && state.meetTextTimer > 60) {
         ctx.globalAlpha = 0.5 + Math.sin(state.timer * 0.08) * 0.3;
-        drawPixelText(ctx, MEET_HINT, INTERNAL_W / 2, 34, 5, "#aaaaaa", "center", false);
+        drawPixelText(ctx, MEET_HINT, INTERNAL_W / 2, 32, 6, "#cccccc", "center", false);
       }
       ctx.globalAlpha = 1;
     }
